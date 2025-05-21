@@ -1,4 +1,4 @@
-FROM python:3.12-slim
+FROM registry.access.redhat.com/ubi8/python-312
 
 # Set work directory
 WORKDIR /app/agents/crewai
@@ -6,11 +6,11 @@ WORKDIR /app/agents/crewai
 # Copy Python Project Files (Container context must be the `python` directory)
 COPY ../.. /app
 
-# Install system build dependencies
-RUN apt-get update && apt-get install -y build-essential && rm -rf /var/lib/apt/lists/*
+USER root
 
-# Install UV package manager
-RUN pip install uv
+# Install system build dependencies and UV package manager
+RUN yum update && yum install -y  gcc gcc-c++ \
+ && pip install uv
 
 # Set environment variables for uv:
 # UV_COMPILE_BYTECODE=1: Compiles Python files to .pyc for faster startup
@@ -23,15 +23,21 @@ ENV UV_COMPILE_BYTECODE=1 \
 # --no-install-project: Prevents installing the project itself in this stage
 # --no-dev: Excludes development dependencies
 # --mount=type=cache: Leverages Docker's build cache for uv, speeding up repeated builds
-RUN --mount=type=cache,target=/root/.cache/uv \
+RUN --mount=type=cache,target=/.cache/uv \
     uv sync --frozen --no-install-project --no-dev
 
 # Install the project
-RUN --mount=type=cache,target=/root/.cache/uv \
+RUN --mount=type=cache,target=/.cache/uv \
     uv sync --frozen --no-dev
+
+# Allow non-root user to access the cache and python env directory
+RUN chgrp -R root /.cache && chmod -R g+rwx /.cache \
+ && chgrp -R root /app/.venv/bin && chmod -R g+rwx /app/.venv/bin
 
 # Expose default port (change if needed)
 EXPOSE 10001
+
+USER 1001
 
 # Run the agent
 CMD ["uv", "run", ".", "--host", "0.0.0.0"]
