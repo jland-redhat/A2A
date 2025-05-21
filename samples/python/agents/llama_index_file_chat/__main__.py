@@ -32,7 +32,8 @@ class MissingAPIKeyError(Exception):
 @click.command()
 @click.option('--host', 'host', default='localhost')
 @click.option('--port', 'port', default=10010)
-def main(host, port):
+@click.option('--host-override', 'host_override')
+def main(host, port, host_override):
     """Starts the Currency Agent server."""
     try:
         if not os.getenv('GOOGLE_API_KEY'):
@@ -54,10 +55,11 @@ def main(host, port):
             examples=['What does this file talk about?'],
         )
 
+        agent_card_host = host_override if host_override else host
         agent_card = AgentCard(
             name='Parse and Chat',
             description='Parses a file and then chats with a user using the parsed content as context.',
-            url=f'http://{host}:{port}/',
+            url=f'http://{agent_card_host}:{port}/',
             version='1.0.0',
             defaultInputModes=LlamaIndexAgentExecutor.SUPPORTED_INPUT_TYPES,
             defaultOutputModes=LlamaIndexAgentExecutor.SUPPORTED_OUTPUT_TYPES,

@@ -32,7 +32,8 @@ class MissingAPIKeyError(Exception):
 @click.command()
 @click.option('--host', 'host', default='localhost')
 @click.option('--port', 'port', default=10000)
-def main(host, port):
+@click.option('--host-override', 'host_override')
+def main(host, port, host_override):
     """Starts the Currency Agent server."""
     try:
         if not os.getenv('GOOGLE_API_KEY'):
@@ -48,10 +49,12 @@ def main(host, port):
             tags=['currency conversion', 'currency exchange'],
             examples=['What is exchange rate between USD and GBP?'],
         )
+
+        agent_card_host = host_override if host_override else host
         agent_card = AgentCard(
             name='Currency Agent',
             description='Helps with exchange rates for currencies',
-            url=f'http://{host}:{port}/',
+            url=f'http://{agent_card_host}:{port}/',
             version='1.0.0',
             defaultInputModes=CurrencyAgent.SUPPORTED_CONTENT_TYPES,
             defaultOutputModes=CurrencyAgent.SUPPORTED_CONTENT_TYPES,

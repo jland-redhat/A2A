@@ -24,7 +24,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=os.getenv("LOGLEVEL", "INFO").upper())
 logger = logging.getLogger(__name__)
 
 
@@ -37,7 +37,8 @@ class MissingAPIKeyError(Exception):
 @click.command()
 @click.option('--host', 'host', default='localhost')
 @click.option('--port', 'port', default=10001)
-def main(host, port):
+@click.option('--host-override', 'host_override')
+def main(host, port, host_override):
     """Entry point for the A2A + CrewAI Image generation sample."""
     try:
         if not os.getenv('GOOGLE_API_KEY') and not os.getenv(
@@ -60,6 +61,7 @@ def main(host, port):
             examples=['Generate a photorealistic image of raspberry lemonade'],
         )
 
+        agent_card_host = host_override if host_override else host
         agent_card = AgentCard(
             name='Image Generator Agent',
             description=(
@@ -67,7 +69,7 @@ def main(host, port):
                 ' powerful editing capabilities to modify, enhance, or completely'
                 ' transform visuals.'
             ),
-            url=f'http://{host}:{port}/',
+            url=f'http://{agent_card_host}:{port}/',
             version='1.0.0',
             defaultInputModes=ImageGenerationAgent.SUPPORTED_CONTENT_TYPES,
             defaultOutputModes=ImageGenerationAgent.SUPPORTED_CONTENT_TYPES,
